@@ -1,0 +1,30 @@
+﻿@model IEnumerable<EasyGames.Models.Product>
+@{
+    ViewData["Title"] = "Shop";
+}
+@section Hero {
+    <partial name="_HeroSlider" />
+}
+
+<h2 class="mb-3">Shop</h2>
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+    @foreach (var p in Model)
+    {
+        <div class="col">
+            <div class="card h-100">
+                <img src="@p.ImageUrl" class="card-img-top" alt="@p.Name" />
+                <div class="card-body">
+                    <h5 class="card-title">@p.Name</h5>
+                    <p class="card-text">$@p.Price</p>
+                    <form method="post" asp-controller="Cart" asp-action="Add" class="add-form">
+                        <input type="hidden" name="productId" value="@p.Id" />
+                        <input type="hidden" name="qty" value="1" />
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-primary">Add to cart</button>
+                    </form>
+                    <a class="btn btn-link" asp-action="Details" asp-route-id="@p.Id">Details</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

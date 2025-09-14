@@ -1,0 +1,61 @@
+﻿@* Views/Cart/ViewCart.cshtml *@
+@model List<EasyGames.Models.CartItem>
+
+@{
+    ViewData["Title"] = "Your Cart";
+    decimal subtotal = Model?.Sum(x => x.Price * x.Qty) ?? 0m;
+}
+
+<h2>Your Cart</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">Cart is empty.</div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th style="width:120px;">Price</th>
+                <th style="width:180px;">Qty</th>
+                <th style="width:120px;">Total</th>
+                <th style="width:120px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var it in Model)
+            {
+                <tr>
+                    <td>@it.Name</td>
+                    <td>$@it.Price</td>
+                    <td>
+                        <form asp-action="UpdateQty" method="post" class="d-flex gap-2">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@it.ProductId" />
+                            <input type="number" name="qty" min="0" value="@it.Qty" class="form-control" style="max-width:80px" />
+                            <button class="btn btn-outline-primary btn-sm" type="submit">Update</button>
+                        </form>
+                    </td>
+                    <td>$@(it.Price* it.Qty)</td>
+                    <td>
+                        <form asp-action="Remove" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@it.ProductId" />
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <h4>Subtotal: $@subtotal</h4>
+        <form asp-action="Checkout" method="post">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-success">Checkout</button>
+        </form>
+    </div>
+}

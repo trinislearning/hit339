@@ -1,0 +1,175 @@
+﻿@* Views/Shared/_Layout.cshtml *@
+@using EasyGames.Services
+@using Microsoft.AspNetCore.Identity
+@using EasyGames.Models
+@inject ICartService Cart
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EasyGames</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/EasyGames.styles.css" asp-append-version="true" />
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    <style>
+        /* nhỏ gọn hơn một chút */
+        .topbar .nav-link, .topbar .navbar-brand {
+            color: #fff !important;
+        }
+
+        .topbar .btn-register {
+            background: #ff6a00;
+            border: none;
+        }
+
+            .topbar .btn-register:hover {
+                background: #ff7f24;
+            }
+
+        .cart-badge {
+            position: absolute;
+            top: 0;
+            left: 20px;
+            transform: translate(-50%,-45%);
+        }
+
+        .subbar .nav-link {
+            color: #333 !important;
+        }
+
+        .hero img {
+            object-fit: cover;
+            max-height: 420px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <!-- TOP BAR (logo trái, icon phải) -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark topbar py-2">
+            <div class="container-fluid">
+                <!-- Brand (logo + tên) -->
+                <a class="navbar-brand d-flex align-items-center" asp-controller="Shop" asp-action="Index">
+                    <i class="bi bi-controller me-2" style="font-size:1.3rem;"></i>
+                    <span class="fw-semibold">EasyGames</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topbar"
+                        aria-controls="topbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div id="topbar" class="collapse navbar-collapse justify-content-end">
+                    <ul class="navbar-nav align-items-center gap-3 ms-auto">
+
+                        <!-- Cart -->
+                        <li class="nav-item position-relative">
+                            <a class="nav-link" asp-controller="Cart" asp-action="ViewCart" title="Cart">
+                                <i class="bi bi-cart3 fs-5"></i>
+                                <span id="cart-count" class="badge bg-danger cart-badge">@Cart.GetCount()</span>
+                            </a>
+                        </li>
+
+                        <!-- Account icon -->
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle fs-5 me-1"></i>
+                                    <span class="d-none d-sm-inline">@User.Identity!.Name</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">Profile</a></li>
+                                    @if (User.IsInRole("Owner"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Products" asp-action="Index">Manage Stock</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Shop", new { area = "" })" method="post" class="px-3">
+                                            <button type="submit" class="btn btn-link p-0">Logout</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Login" title="Login">
+                                    <i class="bi bi-person-circle fs-5"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-sm btn-register text-white" asp-area="Identity" asp-page="/Account/Register">Register</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- SUB BAR (Shop / Category / Privacy) -->
+        <nav class="navbar navbar-expand-md bg-light border-bottom subbar">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#subbar"
+                        aria-controls="subbar" aria-expanded="false" aria-label="Toggle nav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div id="subbar" class="collapse navbar-collapse">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Shop" asp-action="Index">Shop</a>
+                        </li>
+
+                        <!-- Categories (demo static; có thể thay bằng query DB) -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Categories</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="Shop" asp-action="Index" asp-route-category="Book">Books</a></li>
+                                <li><a class="dropdown-item" asp-controller="Shop" asp-action="Index" asp-route-category="Game">Games</a></li>
+                                <li><a class="dropdown-item" asp-controller="Shop" asp-action="Index" asp-route-category="Toy">Toys</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                    <!-- (tuỳ chọn) ô search mini -->
+                    <form class="d-flex" method="get" asp-controller="Shop" asp-action="Index" role="search">
+                        <input class="form-control me-2" type="search" name="q" placeholder="Search products..." />
+                        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- HERO (section tuỳ page) -->
+    @RenderSection("Hero", required: false)
+
+    <div class="container">
+        <main role="main" class="py-4">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; @DateTime.Now.Year - EasyGames - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

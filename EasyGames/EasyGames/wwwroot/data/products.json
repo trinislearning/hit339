@@ -1,0 +1,117 @@
+[
+  {
+    "name": "Harry Potter - Chapter 1: The Boy Who Lived",
+    "category": "Book",
+    "price": 7.99,
+    "stock": 100,
+    "imageUrl": "/images/products/harrypotter1.webp",
+    "description": "Chapter 1 of Harry Potter and the Philosopher's Stone."
+  },
+  {
+    "name": "Harry Potter - Chapter 2: The Vanishing Glass",
+    "category": "Book",
+    "price": 7.99,
+    "stock": 95,
+    "imageUrl": "/images/products/harrypotter2.jpg",
+    "description": "Chapter 2 of Harry Potter and the Philosopher's Stone."
+  },
+  {
+    "name": "Harry Potter - Chapter 3: The Letters from No One",
+    "category": "Book",
+    "price": 7.99,
+    "stock": 95,
+    "imageUrl": "/images/products/harrypotter3.jpg",
+    "description": "Chapter 3 of Harry Potter and the Philosopher's Stone."
+  },
+  
+  {
+    "name": "Harry Potter - Chapter 5: Diagon Alley",
+    "category": "Book",
+    "price": 7.99,
+    "stock": 90,
+    "imageUrl": "/images/products/harrypotter5.jpg",
+    "description": "Chapter 5 of Harry Potter and the Philosopher's Stone."
+  },
+
+  {
+    "name": "Catan Board Game",
+    "category": "Game",
+    "price": 41.99,
+    "stock": 25,
+    "imageUrl": "/images/products/catan.jpg",
+    "description": "Classic resource-trading strategy board game for 3–4 players."
+  },
+  {
+    "name": "Ticket to Ride",
+    "category": "Game",
+    "price": 34.99,
+    "stock": 20,
+    "imageUrl": "/images/products/ticket-to-ride.webp",
+    "description": "Build train routes across the map and outscore your rivals."
+  },
+  {
+    "name": "Azul",
+    "category": "Game",
+    "price": 29.99,
+    "stock": 30,
+    "imageUrl": "/images/products/azul.jpg",
+    "description": "Tile-drafting game about crafting beautiful patterns."
+  },
+  {
+    "name": "Pandemic",
+    "category": "Game",
+    "price": 39.99,
+    "stock": 22,
+    "imageUrl": "/images/products/pandemic.png",
+    "description": "Cooperative board game: work together to save the world."
+  },
+  {
+    "name": "Carcassonne",
+    "category": "Game",
+    "price": 27.99,
+    "stock": 28,
+    "imageUrl": "/images/products/carcassonne.png",
+    "description": "Lay tiles and place meeples to build cities and farms."
+  },
+
+  {
+    "name": "Lego Race Car",
+    "category": "Toy",
+    "price": 49.99,
+    "stock": 15,
+    "imageUrl": "/images/products/lego-race-car.jpg",
+    "description": "Buildable LEGO race car kit for ages 7+."
+  },
+  {
+    "name": "Lego Space Shuttle",
+    "category": "Toy",
+    "price": 59.99,
+    "stock": 12,
+    "imageUrl": "/images/products/lego-shuttle.jpg",
+    "description": "LEGO space shuttle with opening bay and mini-astronaut."
+  },
+  {
+    "name": "Rubik's Cube 3x3",
+    "category": "Toy",
+    "price": 9.99,
+    "stock": 60,
+    "imageUrl": "/images/products/rubik.jpg",
+    "description": "The classic twisty puzzle — smooth, fast turns."
+  },
+  {
+    "name": "Nerf Blaster",
+    "category": "Toy",
+    "price": 24.99,
+    "stock": 25,
+    "imageUrl": "/images/products/nerf.webp",
+    "description": "Foam-dart blaster with quick reload clip."
+  },
+  {
+    "name": "Mini RC Drone",
+    "category": "Toy",
+    "price": 69.99,
+    "stock": 10,
+    "imageUrl": "/images/products/drone.webp",
+    "description": "Palm-sized drone with altitude hold and headless mode."
+  }
+]
