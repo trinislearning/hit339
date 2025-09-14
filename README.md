@@ -62,79 +62,84 @@ The first run will automatically apply database migrations and seed the catalog.
 
 ```bash
 EasyGames/
+│
 ├── Controllers/
+│   ├── HomeController.cs          # grouped Home sections
+│   ├── ShopController.cs          # list/filter + details
+│   ├── CartController.cs          # session cart + checkout (sim)
+│   └── ProductsController.cs      # [Authorize(Roles="Owner")] CRUD
+│
 ├── Data/
 │   ├── ApplicationDbContext.cs
-│   └── Migrations/
+│   ├── IdentitySeed.cs            # roles + owner + products from JSON (upsert)
+│   └── Migrations/                # EF migrations (committed)
+│
 ├── Models/
+│   ├── ApplicationUser.cs
+│   ├── Product.cs
+│   ├── Order.cs, OrderItem.cs
+│   └── (optional) ViewModels (e.g., HomeCatalogVM.cs)
+│
 ├── Services/
+│   ├── ICartService.cs
+│   └── CartService.cs             # wraps Session
+│
 ├── Views/
 │   ├── Shared/
-│   ├── Home/
-│   ├── Shop/
-│   ├── Cart/
-│   └── Products/
+│   │   ├── _Layout.cshtml
+│   │   └── _HeroSlider.cshtml
+│   ├── Home/Index.cshtml
+│   ├── Shop/Index.cshtml, Details.cshtml
+│   ├── Cart/ViewCart.cshtml, Checkout.cshtml
+│   └── Products/*.cshtml
+│
 └── wwwroot/
     ├── images/
-    │   ├── hero/
-    │   └── products/ # Committed demo images
-    ├── uploads/products/ # User uploads (ignored by Git)
-    └── data/products.json # Seed data source
+    │   ├── hero/hero-1.jpg|hero-2.jpg|hero-3.jpg
+    │   └── products/*                 # committed demo images
+    ├── uploads/products/              # runtime uploads (gitignored)
+    └── data/products.json             # seed source (upsert)
+```
+### 3) Seed data & images (examiner-proof)
 
-### 3) Technical Details
-Database & Migrations
-Migrations are committed to the Data/Migrations/ folder.
+The catalog ships in wwwroot/data/products.json.
 
-Run Update-Database (Package Manager Console) or dotnet ef database update (CLI) to apply them manually.
+Product images for seeding live in wwwroot/images/products/** (committed to the repo).
 
-Money fields use decimal(18,2) to prevent precision errors.
+At startup, seeding upserts by Name:
 
-Seed Data & Images
-The IdentitySeed.cs class is responsible for creating roles, the default owner, and populating the product catalog from products.json.
+Not found → Add
 
-Products are upserted by their Name field, making it easy to update the catalog by simply modifying the JSON file.
+Found → Update Category, Price, Stock, ImageUrl, Description.
 
-Image Uploads
-The owner can upload new images through the product management page.
+To change the demo data: edit the JSON, restart the app (no migration needed).
 
-Uploaded images are saved to wwwroot/uploads/products/ with GUID filenames.
+Tip: Keep Name stable (or introduce an SKU if you plan to rename products).
 
-The system handles various modern image formats like .webp and .avif.
+### 4) Database & migrations
 
-4) Configuration & Troubleshooting
-Middleware Order
-A correct middleware pipeline is essential for the application to function properly. The order is:
+Migrations are committed under Data/Migrations/.
 
-Nginx
+On first run, the app applies migrations automatically (if Program.cs enables it) or run manually:
 
-UseHttpsRedirection
-UseStaticFiles
-UseRouting
-UseSession
-UseAuthentication
-UseAuthorization
-MapControllerRoute / MapRazorPages
-Common Issues
-View not found: Ensure view files exist in the correct Views subdirectory.
+Package Manager Console (VS):
+Update-Database
 
-Images not showing: Verify that paths in products.json point to the committed /images/products/ directory.
+CLI:
+```bash
+dotnet tool install -g dotnet-ef   # first time
+dotnet ef database update
+```
+When schema changes (e.g., new fields or decimal precision), create a migration:
+Add-Migration <Name> → Update-Database
 
-5) GitHub & License
-GitHub Basics
-Recommended .gitignore entries:
+Money fields use decimal(18,2) to prevent truncation:
 
-Bash
+Product.Price
 
-.vs/
-bin/
-obj/
-*.user
-*.suo
-*.mdf
-*.ldf
-wwwroot/uploads/
-*.log
-The repository should include Data/Migrations/, wwwroot/images/**, and wwwroot/data/products.json.
+OrderItem.UnitPrice
 
-License
+Order.Total
+
+### 5)License
 This project is intended for educational and coursework purposes. Demo images and product text are placeholders.
