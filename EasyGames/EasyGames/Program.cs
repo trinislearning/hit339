@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // DB (SQL Server LocalDB/Express)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<EasyGames.Services.EmailService>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Identity

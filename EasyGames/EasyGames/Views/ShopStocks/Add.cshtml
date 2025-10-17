@@ -1,0 +1,25 @@
+﻿@model EasyGames.ViewModels.AddShopStockViewModel
+@{
+    var shop = (EasyGames.Models.Shop)ViewBag.Shop;
+    ViewData["Title"] = $"Add Stock - {shop.ShopName}";
+}
+<h2 class="mb-3">Add Stock — @shop.ShopName</h2>
+
+<form asp-action="Add" method="post" class="mt-3">
+    <input type="hidden" asp-for="ShopId" />
+    <div class="mb-3">
+        <label class="form-label">Product</label>
+        <select asp-for="ProductId" class="form-select">
+            @foreach (var p in Model.Products)
+            {
+                <option value="@p.Id">@p.Name</option>
+            }
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Quantity</label>
+        <input asp-for="Quantity" class="form-control" type="number" min="0" value="1" />
+    </div>
+    <button class="btn btn-primary">Add</button>
+    <a asp-action="Index" asp-route-shopId="@Model.ShopId" class="btn btn-link">Cancel</a>
+</form>

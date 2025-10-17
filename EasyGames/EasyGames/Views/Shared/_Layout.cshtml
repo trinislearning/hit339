@@ -12,13 +12,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EasyGames</title>
+
+    <!-- Bootstrap & site styles -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/EasyGames.styles.css" asp-append-version="true" />
+
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
     <style>
-        /* nhỏ gọn hơn một chút */
+        /* compact topbar */
         .topbar .nav-link, .topbar .navbar-brand {
             color: #fff !important;
         }
@@ -51,10 +55,10 @@
 </head>
 <body>
     <header>
-        <!-- TOP BAR (logo trái, icon phải) -->
+        <!-- TOP BAR (brand left, icons right) -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark topbar py-2">
             <div class="container-fluid">
-                <!-- Brand (logo + tên) -->
+                <!-- Brand -->
                 <a class="navbar-brand d-flex align-items-center" asp-controller="Shop" asp-action="Index">
                     <i class="bi bi-controller me-2" style="font-size:1.3rem;"></i>
                     <span class="fw-semibold">EasyGames</span>
@@ -76,7 +80,7 @@
                             </a>
                         </li>
 
-                        <!-- Account icon -->
+                        <!-- Account -->
                         @if (SignInManager.IsSignedIn(User))
                         {
                             <li class="nav-item dropdown">
@@ -86,13 +90,20 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">Profile</a></li>
+
+                                    @* Quick link for owner to jump to stock management *@
                                     @if (User.IsInRole("Owner"))
                                     {
                                         <li><a class="dropdown-item" asp-controller="Products" asp-action="Index">Manage Stock</a></li>
+                                        <li><a class="dropdown-item" asp-controller="OwnerShops" asp-action="Index">Manage Shops</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Reports" asp-action="SalesByUser">Sales Report</a></li>
                                     }
+
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
-                                        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Shop", new { area = "" })" method="post" class="px-3">
+                                        <form asp-area="Identity" asp-page="/Account/Logout"
+                                              asp-route-returnUrl="@Url.Action("Index", "Shop", new { area = "" })"
+                                              method="post" class="px-3">
                                             <button type="submit" class="btn btn-link p-0">Logout</button>
                                         </form>
                                     </li>
@@ -115,20 +126,22 @@
             </div>
         </nav>
 
-        <!-- SUB BAR (Shop / Category / Privacy) -->
+        <!-- SUB BAR (Shop / Category / Privacy + Owner dropdown) -->
         <nav class="navbar navbar-expand-md bg-light border-bottom subbar">
             <div class="container-fluid">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#subbar"
                         aria-controls="subbar" aria-expanded="false" aria-label="Toggle nav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
                 <div id="subbar" class="collapse navbar-collapse">
+                    <!-- Left group -->
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Shop" asp-action="Index">Shop</a>
                         </li>
 
-                        <!-- Categories (demo static; có thể thay bằng query DB) -->
+                        <!-- Categories (static demo; you can replace with DB-driven menu) -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Categories</a>
                             <ul class="dropdown-menu">
@@ -141,8 +154,26 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+
+                        @* OWNER dropdown — shows only to Owner role.
+                           We keep Owner quick-links here so markers can easily verify features. *@
+                        @if (User.IsInRole("Owner"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Owner</a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="Products" asp-action="Index">Stock</a></li>
+                                    <li><a class="dropdown-item" asp-controller="OwnerShops" asp-action="Index">Shops</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Reports" asp-action="SalesByUser">Sales Report</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Emails" asp-action="Compose">Send Email</a></li>
+
+                                    @* If you later add ShopStocks index that needs a shopId, link via OwnerShops -> ShopStocks. *@
+                                </ul>
+                            </li>
+                        }
                     </ul>
-                    <!-- (tuỳ chọn) ô search mini -->
+
+                    <!-- Right: small search -->
                     <form class="d-flex" method="get" asp-controller="Shop" asp-action="Index" role="search">
                         <input class="form-control me-2" type="search" name="q" placeholder="Search products..." />
                         <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
@@ -152,7 +183,7 @@
         </nav>
     </header>
 
-    <!-- HERO (section tuỳ page) -->
+    <!-- HERO (optional per page) -->
     @RenderSection("Hero", required: false)
 
     <div class="container">
@@ -167,6 +198,7 @@
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
