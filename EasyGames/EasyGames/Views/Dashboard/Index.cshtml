@@ -1,0 +1,74 @@
+﻿@model EasyGames.Controllers.DashboardVm
+@{
+    ViewData["Title"] = "Owner Dashboard";
+}
+<h2 class="mb-3">Owner Dashboard</h2>
+<p class="text-muted">Period: @Model.From.ToString("yyyy-MM-dd") → @Model.To.ToString("yyyy-MM-dd")</p>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Revenue (30d)</div>
+                <div class="h4">@Model.Revenue30d.ToString("C")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Profit (30d)</div>
+                <div class="h4">@Model.Profit30d.ToString("C")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Low Stock (Owner Inventory)</div>
+            <div class="card-body p-0">
+                <table class="table mb-0 table-sm">
+                    <thead><tr><th>Name</th><th class="text-end">Qty</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in Model.LowStock)
+                        {
+                            <tr>
+                                <td>@p.Name</td>
+                                <td class="text-end">@p.Qty</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                <a asp-controller="Products" asp-action="Index" class="btn btn-sm btn-outline-primary">Manage Stock</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Top Products by Profit (30d)</div>
+            <div class="card-body p-0">
+                <table class="table mb-0 table-sm">
+                    <thead><tr><th>Name</th><th class="text-end">Qty</th><th class="text-end">Profit</th></tr></thead>
+                    <tbody>
+                        @foreach (var t in Model.TopProfit)
+                        {
+                            <tr>
+                                <td>@t.Name</td>
+                                <td class="text-end">@t.Qty</td>
+                                <td class="text-end">@t.Profit.ToString("C")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                <a asp-controller="Reports" asp-action="SalesByUser" class="btn btn-sm btn-outline-secondary">Open Report</a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,55 @@
+﻿@model IEnumerable<EasyGames.Controllers.OwnerUserVm>
+@{
+    ViewData["Title"] = "Users";
+    var q = (string)ViewBag.Query;
+    var tier = (string)ViewBag.Tier;
+}
+<h2 class="mb-3">Users</h2>
+
+@if (TempData["ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input name="q" value="@q" class="form-control" placeholder="Search name/email/phone" />
+    </div>
+    <div class="col-md-3">
+        <select name="tier" class="form-select">
+            <option value="">All tiers</option>
+            <option selected="@(tier == "Bronze")">Bronze</option>
+            <option selected="@(tier == "Silver")">Silver</option>
+            <option selected="@(tier == "Gold")">Gold</option>
+            <option selected="@(tier == "Platinum")">Platinum</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary">Filter</button>
+    </div>
+</form>
+
+<table class="table table-striped table-bordered align-middle">
+    <thead>
+        <tr><th>Email</th><th>Name</th><th>Phone</th><th>Tier</th><th style="width:120px"></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            var badge = u.Tier switch
+            {
+                "Platinum" => "badge bg-primary",
+                "Gold" => "badge bg-warning text-dark",
+                "Silver" => "badge bg-info text-dark",
+                _ => "badge bg-secondary"
+            };
+            <tr>
+                <td>@u.Email</td>
+                <td>@u.FullName</td>
+                <td>@u.Phone</td>
+                <td><span class="@badge">@u.Tier</span></td>
+                <td><a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-outline-secondary">Edit</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
