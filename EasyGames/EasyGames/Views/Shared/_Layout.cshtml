@@ -97,6 +97,10 @@
                                         <li><a class="dropdown-item" asp-controller="Products" asp-action="Index">Manage Stock</a></li>
                                         <li><a class="dropdown-item" asp-controller="OwnerShops" asp-action="Index">Manage Shops</a></li>
                                         <li><a class="dropdown-item" asp-controller="Reports" asp-action="SalesByUser">Sales Report</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                                        <li><a class="dropdown-item" asp-controller="OwnerUsers" asp-action="Index">Users</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Emails" asp-action="Compose">Send Email</a></li>
+
                                     }
 
                                     <li><hr class="dropdown-divider" /></li>
@@ -165,9 +169,11 @@
                                     <li><a class="dropdown-item" asp-controller="Products" asp-action="Index">Stock</a></li>
                                     <li><a class="dropdown-item" asp-controller="OwnerShops" asp-action="Index">Shops</a></li>
                                     <li><a class="dropdown-item" asp-controller="Reports" asp-action="SalesByUser">Sales Report</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                                    <li><a class="dropdown-item" asp-controller="OwnerUsers" asp-action="Index">Users</a></li>
                                     <li><a class="dropdown-item" asp-controller="Emails" asp-action="Compose">Send Email</a></li>
 
-                                    @* If you later add ShopStocks index that needs a shopId, link via OwnerShops -> ShopStocks. *@
+                                    @* If later add ShopStocks index that needs a shopId, link via OwnerShops -> ShopStocks. *@
                                 </ul>
                             </li>
                         }

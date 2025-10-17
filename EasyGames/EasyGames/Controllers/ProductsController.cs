@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EasyGames.Controllers
 {
+    /// <summary>
+    /// Owner-only product management with image upload support.
+    /// Extended with search/sort + margin view (uses Product.CostPrice and Price).
+    /// </summary>
     [Authorize(Roles = "Owner")]
     public class ProductsController : Controller
     {
@@ -19,9 +23,36 @@ namespace EasyGames.Controllers
             _env = env;
         }
 
-        // GET: /Products
-        public async Task<IActionResult> Index()
-            => View(await _db.Products.OrderBy(p => p.Name).ToListAsync());
+        // GET: /Products?q=...&sort=margin|qty|name
+        // Owner list with search and sort, keeping your original simple list as default.
+        public async Task<IActionResult> Index(string? q, string? sort)
+        {
+            IQueryable<Product> items = _db.Products;
+
+            // Text search across Name/Category/Source
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                items = items.Where(p =>
+                    p.Name.Contains(term) ||
+                    p.Category.Contains(term) ||
+                    (p.Source != null && p.Source.Contains(term)));
+            }
+
+            // Sorting
+            items = (sort ?? "name").ToLowerInvariant() switch
+            {
+                "qty" => items.OrderByDescending(p => p.Stock).ThenBy(p => p.Name),
+                "margin" => items.OrderByDescending(p => p.Price > 0 ? (p.Price - p.CostPrice) / p.Price : 0)
+                                   .ThenBy(p => p.Name),
+                _ => items.OrderBy(p => p.Name)
+            };
+
+            var list = await items.ToListAsync();
+            ViewBag.Query = q ?? "";
+            ViewBag.Sort = sort ?? "name";
+            return View(list);
+        }
 
         // GET: /Products/Create
         public IActionResult Create() => View(new Product());
@@ -32,7 +63,7 @@ namespace EasyGames.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            // upload image -> save to wwwroot/uploads/products
+            // Upload image -> save to wwwroot/uploads/products
             if (image is { Length: > 0 })
             {
                 var saveResult = await SaveImageAsync(image);
@@ -41,7 +72,7 @@ namespace EasyGames.Controllers
                     ModelState.AddModelError(string.Empty, saveResult.error!);
                     return View(model);
                 }
-                model.ImageUrl = saveResult.url; // ví dụ: /uploads/products/xxx.webp
+                model.ImageUrl = saveResult.url; // e.g. /uploads/products/xxx.webp|jpg|png...
             }
 
             _db.Add(model);
@@ -66,12 +97,14 @@ namespace EasyGames.Controllers
             var dbItem = await _db.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
             if (dbItem == null) return NotFound();
 
-            // upload new image -> delete old pic and save new pic
+            // Upload new image -> delete old file if stored under /uploads/
             if (image is { Length: > 0 })
             {
-                if (!string.IsNullOrWhiteSpace(dbItem.ImageUrl) && dbItem.ImageUrl.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(dbItem.ImageUrl) &&
+                    dbItem.ImageUrl.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
                 {
-                    var oldPath = Path.Combine(_env.WebRootPath, dbItem.ImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    var oldPath = Path.Combine(_env.WebRootPath,
+                        dbItem.ImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
                     if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
                 }
 
@@ -85,7 +118,7 @@ namespace EasyGames.Controllers
             }
             else
             {
-                // keep old image
+                // Keep old image if no new file uploaded
                 model.ImageUrl = dbItem.ImageUrl;
             }
 
@@ -108,10 +141,12 @@ namespace EasyGames.Controllers
             var p = await _db.Products.FindAsync(id);
             if (p != null)
             {
-                // delete local file
-                if (!string.IsNullOrWhiteSpace(p.ImageUrl) && p.ImageUrl.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                // Delete local file if it was stored under /uploads/
+                if (!string.IsNullOrWhiteSpace(p.ImageUrl) &&
+                    p.ImageUrl.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
                 {
-                    var path = Path.Combine(_env.WebRootPath, p.ImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    var path = Path.Combine(_env.WebRootPath,
+                        p.ImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
                     if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
                 }
 
@@ -129,6 +164,10 @@ namespace EasyGames.Controllers
         }
 
         // ===== Helpers =====
+        /// <summary>
+        /// Saves an uploaded image under wwwroot/uploads/products and returns a relative URL.
+        /// Allows .jpg, .jpeg, .png, .gif, .webp up to 5MB.
+        /// </summary>
         private async Task<(bool ok, string? url, string? error)> SaveImageAsync(IFormFile file)
         {
             var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
@@ -137,7 +176,7 @@ namespace EasyGames.Controllers
             if (!allowed.Contains(ext))
                 return (false, null, "Only .jpg, .jpeg, .png, .gif, .webp are allowed.");
 
-            // opt image size ~ 5 MB
+            // Max ~5MB
             if (file.Length > 5 * 1024 * 1024)
                 return (false, null, "Image too large (max 5MB).");
 
@@ -150,7 +189,7 @@ namespace EasyGames.Controllers
             using var stream = System.IO.File.Create(filePath);
             await file.CopyToAsync(stream);
 
-            // return relative to ImageUrl
+            // Return relative URL to be stored in Product.ImageUrl
             return (true, $"/uploads/products/{fileName}", null);
         }
     }
