@@ -1,0 +1,87 @@
+﻿@model EasyGames.ViewModels.ComposeEmailViewModel
+@{
+    ViewData["Title"] = "Send Email";
+}
+
+<h2 class="mb-3">Owner – Send Email</h2>
+
+@if (TempData["ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<form asp-action="Compose" method="post" class="mt-3">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Audience</label>
+            <select asp-for="Audience" class="form-select" id="audience">
+                <option value="All">All Users</option>
+                <option value="Tier">By Tier</option>
+                <option value="Role">By Role</option>
+                <option value="Custom">Custom List</option>
+            </select>
+        </div>
+
+        <div class="col-md-4 audience-tier d-none">
+            <label class="form-label">Tier</label>
+            <select asp-for="Tier" class="form-select">
+                <option value="">-- choose --</option>
+                <option>Bronze</option>
+                <option>Silver</option>
+                <option>Gold</option>
+                <option>Platinum</option>
+            </select>
+        </div>
+
+        <div class="col-md-4 audience-role d-none">
+            <label class="form-label">Role</label>
+            <select asp-for="Role" class="form-select">
+                <option value="">-- choose --</option>
+                <option>Owner</option>
+                <option>Customer</option>
+                <option>Shop</option>
+            </select>
+        </div>
+
+        <div class="col-12 audience-custom d-none">
+            <label class="form-label">Custom Emails (comma-separated)</label>
+            <textarea asp-for="CustomEmails" class="form-control" rows="2" placeholder="a@x.com, b@y.com"></textarea>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Subject</label>
+            <input asp-for="Subject" class="form-control" />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Body (HTML)</label>
+            <textarea asp-for="BodyHtml" class="form-control" rows="8"></textarea>
+        </div>
+
+        <div class="col-12">
+            <button class="btn btn-primary">Send</button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Show/hide fields by audience
+        const sel = document.getElementById('audience');
+        const tier = document.querySelector('.audience-tier');
+        const role = document.querySelector('.audience-role');
+        const custom = document.querySelector('.audience-custom');
+
+        function updateAudience() {
+            const v = sel.value;
+            tier.classList.toggle('d-none', v !== 'Tier');
+            role.classList.toggle('d-none', v !== 'Role');
+            custom.classList.toggle('d-none', v !== 'Custom');
+        }
+        sel.addEventListener('change', updateAudience);
+        updateAudience();
+    </script>
+}

@@ -1,5 +1,4 @@
-﻿// Data/IdentitySeed.cs
-using System.Text.Json;
+﻿using System.Text.Json;
 using EasyGames.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -7,6 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EasyGames.Data
 {
+    /// <summary>
+    /// Seeds essential roles, default Owner account, and initial Products.
+    /// Supports optional JSON import from wwwroot/data/products.json.
+    /// </summary>
     public static class IdentitySeed
     {
         public static async Task SeedAsync(IServiceProvider services)
@@ -18,12 +21,17 @@ namespace EasyGames.Data
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
 
-            // 1) Roles
-            foreach (var r in new[] { "Owner", "Customer" })
+            // -----------------------
+            // 1. Create essential roles
+            // -----------------------
+            var roles = new[] { "Owner", "Customer", "Shop" }; // "Shop" optional for POS module later
+            foreach (var r in roles)
                 if (!await roleMgr.RoleExistsAsync(r))
                     await roleMgr.CreateAsync(new IdentityRole(r));
 
-            // 2) Owner user
+            // -----------------------
+            // 2. Ensure Owner account
+            // -----------------------
             var email = "owner@easygames.local";
             var owner = await userMgr.FindByEmailAsync(email);
             if (owner == null)
@@ -33,18 +41,28 @@ namespace EasyGames.Data
                     UserName = email,
                     Email = email,
                     EmailConfirmed = true,
-                    FullName = "Site Owner"
+                    FullName = "Site Owner",
+                    Tier = "Platinum"  // owner always platinum tier
                 };
-                var ok = await userMgr.CreateAsync(owner, "Owner#123");
-                if (ok.Succeeded) await userMgr.AddToRoleAsync(owner, "Owner");
+
+                var createResult = await userMgr.CreateAsync(owner, "Owner#123");
+                if (createResult.Succeeded)
+                    await userMgr.AddToRoleAsync(owner, "Owner");
+            }
+            else if (!await userMgr.IsInRoleAsync(owner, "Owner"))
+            {
+                await userMgr.AddToRoleAsync(owner, "Owner");
             }
 
-            // 3) Products (merge and add)
-            var desired = new List<Product>();
+            // -----------------------
+            // 3. Seed initial products
+            // -----------------------
+            List<Product> desired = new();
 
-            // prioritize reading wwwroot/data/products.json
+            // Try reading from wwwroot/data/products.json
             var root = env.WebRootPath ?? env.ContentRootPath;
             var jsonPath = Path.Combine(root, "data", "products.json");
+
             if (File.Exists(jsonPath))
             {
                 try
@@ -59,33 +77,54 @@ namespace EasyGames.Data
                 }
             }
 
-            // Fallback only if there is no item to display
+            // Fallback demo data if JSON file missing or empty
             if (desired.Count == 0)
             {
                 desired = new List<Product>
                 {
                     new Product {
                         Name = "Harry Potter and the Philosopher's Stone",
-                        Category = "Book", Price = 22.99m, Stock = 50,
-                        ImageUrl = "https://via.placeholder.com/900x650?text=Book", 
+                        Category = "Book",
+                        Price = 22.99m,
+                        CostPrice = 10.50m,
+                        Source = "Book Supplier Ltd.",
+                        Stock = 50,
+                        ImageUrl = "https://via.placeholder.com/900x650?text=Book",
                         Description = "Classic fantasy novel."
                     },
                     new Product {
                         Name = "Catan Board Game",
-                        Category = "Game", Price = 41.99m, Stock = 25,
+                        Category = "Game",
+                        Price = 41.99m,
+                        CostPrice = 20.00m,
+                        Source = "Board Games Co.",
+                        Stock = 25,
                         ImageUrl = "https://via.placeholder.com/900x650?text=Game",
                         Description = "Strategy board game."
                     },
                     new Product {
                         Name = "Lego Race Car",
-                        Category = "Toy", Price = 49.99m, Stock = 15,
+                        Category = "Toy",
+                        Price = 49.99m,
+                        CostPrice = 25.00m,
+                        Source = "Lego Distributor",
+                        Stock = 15,
                         ImageUrl = "https://via.placeholder.com/900x650?text=Toy",
                         Description = "Buildable toy car."
                     }
                 };
             }
 
-            // add products based on name
+            // Fill missing fields (CostPrice/Source) to make reports consistent
+            foreach (var p in desired)
+            {
+                if (p.CostPrice <= 0)
+                    p.CostPrice = Math.Round(p.Price * 0.6m, 2);
+                if (string.IsNullOrWhiteSpace(p.Source))
+                    p.Source = "Default Supplier";
+            }
+
+            // Add only if product name not already exists
             var existingNames = db.Products.Select(p => p.Name)
                                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -99,6 +138,13 @@ namespace EasyGames.Data
                 db.Products.AddRange(toAdd);
                 await db.SaveChangesAsync();
             }
+
+            // -----------------------
+            // 4. Optional: log seed summary
+            // -----------------------
+            Console.WriteLine($"[Seed] Roles: {string.Join(", ", roles)}");
+            Console.WriteLine($"[Seed] Owner: {email}");
+            Console.WriteLine($"[Seed] Products added: {toAdd.Count}");
         }
     }
 }

@@ -10,5 +10,9 @@ namespace EasyGames.Models
 
         [PersonalData, DataType(DataType.Date)]
         public DateTime? DOB { get; set; }
+
+        // NEW: Customer tier for discounts / reporting
+        // Allowed: Bronze, Silver, Gold, Platinum
+        public string Tier { get; set; } = "Bronze";
     }
 }

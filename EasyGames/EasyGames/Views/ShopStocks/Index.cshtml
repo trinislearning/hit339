@@ -1,0 +1,41 @@
+﻿@model IEnumerable<EasyGames.Models.ShopStock>
+@{
+    var shop = ViewBag.Shop as EasyGames.Models.Shop;
+    ViewData["Title"] = $"Stock – {shop?.Name}";
+}
+
+<h2>@shop?.Name – Stock</h2>
+<p><a class="btn btn-success" asp-action="Add" asp-route-shopId="@shop?.Id">Add Stock</a></p>
+
+@if (TempData["ok"] != null)
+{
+    <div class="alert alert-success">@TempData["ok"]</div>
+}
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.Product.Name</td>
+            <td>@item.Product.Category</td>
+            <td>@item.Quantity</td>
+            <td>
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" name="id" value="@item.Id" />
+                    <input type="hidden" name="shopId" value="@shop.Id" />
+                    <button class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

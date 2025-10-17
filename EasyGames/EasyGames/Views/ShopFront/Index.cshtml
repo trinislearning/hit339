@@ -1,0 +1,19 @@
+﻿@model IEnumerable<EasyGames.Models.Shop>
+@{
+    ViewData["Title"] = "Shop Branches";
+}
+<h2>Our Shops</h2>
+<div class="row">
+@foreach (var s in Model)
+{
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5>@s.Name</h5>
+                <p>@s.Location</p>
+                <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-primary">View Products</a>
+            </div>
+        </div>
+    </div>
+}
+</div>

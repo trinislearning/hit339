@@ -1,0 +1,35 @@
+﻿@model EasyGames.Models.Shop
+@{
+    ViewData["Title"] = Model.Name;
+}
+<h2>@Model.Name – Products</h2>
+<p>@Model.Location</p>
+
+@if (Model.Stocks == null || !Model.Stocks.Any())
+{
+    <div class="alert alert-info">No stock available in this shop.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var stock in Model.Stocks)
+        {
+            <tr>
+                <td>@stock.Product.Name</td>
+                <td>@stock.Product.Category</td>
+                <td>@stock.Product.Price.ToString("C")</td>
+                <td>@stock.Quantity</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

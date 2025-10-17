@@ -1,60 +1,76 @@
-﻿@model EasyGames.Models.Product
+﻿@model IEnumerable<EasyGames.Models.Product>
 @{
-    ViewData["Title"] = "Edit Product";
+    ViewData["Title"] = "Products";
+    var q = (string)(ViewBag.Query ?? "");
+    var sort = (string)(ViewBag.Sort ?? "name");
+
+    // Owner-only page (controller has [Authorize(Roles="Owner")])
+    // Show margin, cost, source, low-stock highlight.
 }
-<h2>Edit Product</h2>
 
-<form asp-action="Edit" method="post" enctype="multipart/form-data">
-    @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="Id" />
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<h2 class="mb-3">Products</h2>
 
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+@if (TempData["ok"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-5">
+        <input class="form-control" name="q" value="@q" placeholder="Search name/category/source..." />
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Category" class="form-label"></label>
-        <input asp-for="Category" class="form-control" />
-        <span asp-validation-for="Category" class="text-danger"></span>
+    <div class="col-md-3">
+        <select name="sort" class="form-select">
+            <option value="name" selected="@(sort == "name")">Sort by name</option>
+            <option value="qty" selected="@(sort == "qty")">Sort by quantity</option>
+            <option value="margin" selected="@(sort == "margin")">Sort by margin</option>
+        </select>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Price" class="form-label"></label>
-        <input asp-for="Price" class="form-control" />
-        <span asp-validation-for="Price" class="text-danger"></span>
+    <div class="col-md-4 text-end">
+        <a class="btn btn-primary" asp-action="Create">Add Product</a>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Stock" class="form-label"></label>
-        <input asp-for="Stock" class="form-control" />
-        <span asp-validation-for="Stock" class="text-danger"></span>
-    </div>
-
-    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
-    {
-        <div class="mb-2">
-            <label class="form-label">Current image</label><br />
-            <img src="@Model.ImageUrl" alt="current" style="max-height:160px" class="rounded border" />
-        </div>
-    }
-    <div class="mb-3">
-        <label class="form-label">Replace image</label>
-        <input type="file" name="image" class="form-control" accept="image/*" />
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-
-    <button class="btn btn-primary" type="submit">Save</button>
-    <a class="btn btn-secondary" asp-action="Index">Back</a>
 </form>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+<table class="table table-striped table-bordered align-middle">
+    <thead>
+        <tr>
+            <th style="width:64px">Image</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Source</th>
+            <th class="text-end">Cost</th>
+            <th class="text-end">Price</th>
+            <th class="text-end">Margin</th>
+            <th class="text-end">Qty</th>
+            <th style="width:200px"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            var margin = p.Price > 0 ? (p.Price - p.CostPrice) / p.Price * 100m : 0m;
+            var low = p.Stock < 5;
+
+            <tr class="@(low ? "table-warning" : "")">
+                <td>
+                    @if (!string.IsNullOrWhiteSpace(p.ImageUrl))
+                    {
+                        <img src="@p.ImageUrl" alt="@p.Name" style="width:56px;height:56px;object-fit:cover;border-radius:.25rem;" />
+                    }
+                </td>
+                <td>@p.Name</td>
+                <td>@p.Category</td>
+                <td>@p.Source</td>
+                <td class="text-end">@p.CostPrice.ToString("C")</td>
+                <td class="text-end">@p.Price.ToString("C")</td>
+                <td class="text-end">@margin.ToString("F1")%</td>
+                <td class="text-end">@p.Stock</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Details</a>
+                    <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
