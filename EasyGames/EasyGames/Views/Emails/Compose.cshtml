@@ -11,6 +11,8 @@
 }
 
 <form asp-action="Compose" method="post" class="mt-3">
+    @Html.AntiForgeryToken()
+
     <div class="row g-3">
         <div class="col-md-4">
             <label class="form-label">Audience</label>
@@ -31,7 +33,6 @@
                 <option>Gold</option>
                 <option>Platinum</option>
             </select>
-            <span asp-validation-for="Tier" class="text-danger"></span>
         </div>
 
         <div class="col-md-4 audience-role d-none">
@@ -42,25 +43,21 @@
                 <option>Customer</option>
                 <option>Shop</option>
             </select>
-            <span asp-validation-for="Role" class="text-danger"></span>
         </div>
 
         <div class="col-12 audience-custom d-none">
             <label class="form-label">Custom Emails (comma-separated)</label>
             <textarea asp-for="CustomEmails" class="form-control" rows="2" placeholder="a@x.com, b@y.com"></textarea>
-            <span asp-validation-for="CustomEmails" class="text-danger"></span>
         </div>
 
         <div class="col-12">
             <label class="form-label">Subject</label>
             <input asp-for="Subject" class="form-control" />
-            <span asp-validation-for="Subject" class="text-danger"></span>
         </div>
 
         <div class="col-12">
             <label class="form-label">Body (HTML)</label>
-            <textarea asp-for="BodyHtml" class="form-control" rows="10"></textarea>
-            <span asp-validation-for="BodyHtml" class="text-danger"></span>
+            <textarea asp-for="BodyHtml" class="form-control" rows="8"></textarea>
         </div>
 
         <div class="col-12">
@@ -72,7 +69,7 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Small UX script to show/hide fields based on selected audience
+        // Show/hide fields by audience
         const sel = document.getElementById('audience');
         const tier = document.querySelector('.audience-tier');
         const role = document.querySelector('.audience-role');

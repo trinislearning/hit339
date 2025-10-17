@@ -14,7 +14,12 @@ namespace EasyGames.Controllers
         public OwnerShopsController(ApplicationDbContext db) => _db = db;
 
         public async Task<IActionResult> Index()
-            => View(await _db.Shops.OrderBy(s => s.ShopName).ToListAsync());
+        {
+            
+            var shops = await _db.Shops.ToListAsync();
+            var sortedShops = shops.OrderBy(s => s.ShopName).ToList();
+            return View(sortedShops);
+        }
 
         public IActionResult Create() => View();
 

@@ -1,85 +1,44 @@
 ﻿using System.Net;
 using System.Net.Mail;
-using EasyGames.Data;
-using EasyGames.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace EasyGames.Services
 {
-    /// <summary>
-    /// Lightweight SMTP email sender for Owner bulk emails.
-    /// Sends in small BCC batches to avoid huge TO lists.
-    /// Logs each send into EmailLogs for auditing.
-    /// </summary>
     public class EmailService
     {
         private readonly IConfiguration _cfg;
-        private readonly ApplicationDbContext _db;
+        public EmailService(IConfiguration cfg) { _cfg = cfg; }
 
-        public EmailService(IConfiguration cfg, ApplicationDbContext db)
-        {
-            _cfg = cfg;
-            _db = db;
-        }
-
-        private SmtpClient CreateClient()
+        public async Task SendAsync(string to, string subject, string html)
         {
             var host = _cfg["Smtp:Host"];
-            var port = int.Parse(_cfg["Smtp:Port"] ?? "587");
-            var enableSsl = bool.Parse(_cfg["Smtp:EnableSsl"] ?? "true");
+            var from = _cfg["Smtp:FromEmail"] ?? _cfg["Smtp:User"];
+
+            if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(from))
+                return; // not configured → skip silently
+
+            var port = int.TryParse(_cfg["Smtp:Port"], out var p) ? p : 587;
+            var enable = bool.TryParse(_cfg["Smtp:EnableSsl"], out var e) ? e : true;
             var user = _cfg["Smtp:User"];
             var pass = _cfg["Smtp:Pass"];
+            var fromName = _cfg["Smtp:FromName"] ?? "EasyGames";
 
-            return new SmtpClient(host, port)
+            using var mail = new MailMessage(new MailAddress(from, fromName), new MailAddress(to))
             {
-                EnableSsl = enableSsl,
-                Credentials = new NetworkCredential(user, pass)
+                Subject = subject ?? string.Empty,
+                Body = html ?? string.Empty,
+                IsBodyHtml = true
             };
-        }
 
-        public async Task<int> SendBulkAsync(IEnumerable<string> recipients, string subject, string htmlBody, string audienceLabel)
-        {
-            var list = recipients
-                .Where(e => !string.IsNullOrWhiteSpace(e))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (!list.Any()) return 0;
-
-            using var client = CreateClient();
-
-            // send as BCC batches (e.g., 50 each) to reduce overhead
-            const int batchSize = 50;
-            for (int i = 0; i < list.Count; i += batchSize)
+            using var client = new SmtpClient(host, port)
             {
-                var batch = list.Skip(i).Take(batchSize).ToList();
-                using var msg = new MailMessage
-                {
-                    From = new MailAddress(_cfg["Smtp:User"] ?? "noreply@easy.games"),
-                    Subject = subject,
-                    Body = htmlBody,
-                    IsBodyHtml = true
-                };
+                EnableSsl = enable,
+                Credentials = string.IsNullOrWhiteSpace(user)
+                    ? CredentialCache.DefaultNetworkCredentials
+                    : new NetworkCredential(user, pass)
+            };
 
-                // Put all recipients in BCC
-                foreach (var r in batch)
-                    msg.Bcc.Add(r);
-
-                // Add a "friendly" To to avoid spam filters (some servers require non-empty To)
-                msg.To.Add(_cfg["Smtp:User"] ?? "noreply@easy.games");
-
-                await client.SendMailAsync(msg);
-            }
-
-            _db.EmailLogs.Add(new EmailLog
-            {
-                Subject = subject,
-                Audience = audienceLabel,
-                RecipientCount = list.Count,
-                SentAt = DateTime.UtcNow
-            });
-            await _db.SaveChangesAsync();
-
-            return list.Count;
+            await client.SendMailAsync(mail);
         }
     }
 }

@@ -32,5 +32,9 @@ namespace EasyGames.Models
 
         [StringLength(1000)]
         public string? Description { get; set; }
+
+        public decimal SellPrice { get => Price; set => Price = value; }   // alias for Price
+        public decimal BuyPrice { get => CostPrice; set => CostPrice = value; }   // alias for CostPrice
+        public int Quantity { get => Stock; set => Stock = value; }   // alias for Stock
     }
 }

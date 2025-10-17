@@ -6,13 +6,19 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DB (SQL Server LocalDB/Express)
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<EasyGames.Services.EmailService>();
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+// Use SQLite for Development, SQL Server for Production
+if (builder.Environment.IsDevelopment())
+{
+    var cs = builder.Configuration.GetConnectionString("DevSqlite") ?? "Data Source=EasyGames.db";
+    builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseSqlite(cs));
+}
+else
+{
+    var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseSqlServer(cs));
+}
 
-// Identity
+// ---- Identity ----
 builder.Services.AddDefaultIdentity<ApplicationUser>(o =>
 {
     o.SignIn.RequireConfirmedAccount = false;
@@ -25,7 +31,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(o =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-// Session + Cart
+// ---- App Services ----
 builder.Services.AddSession(o =>
 {
     o.IdleTimeout = TimeSpan.FromHours(4);
@@ -34,6 +40,11 @@ builder.Services.AddSession(o =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICartService, CartService>();
+
+// (Add these if you’re using the new modules)
+builder.Services.AddScoped<IShopService, ShopService>();
+builder.Services.AddScoped<IPromoService, PromoService>();
+builder.Services.AddScoped<EasyGames.Services.EmailService>();
 
 builder.Services.AddControllersWithViews();
 
@@ -51,9 +62,7 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -63,12 +72,12 @@ app.MapControllerRoute(
     pattern: "{controller=Shop}/{action=Index}/{id?}");
 app.MapRazorPages();
 
-// Auto migrations + seed data
+// ---- Auto-migrate + seed ----
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await db.Database.MigrateAsync();                     // for all migration
-    await IdentitySeed.SeedAsync(scope.ServiceProvider);  // seed roles, owner, products
+    await db.Database.MigrateAsync();                    // apply migrations
+    await IdentitySeed.SeedAsync(scope.ServiceProvider); // roles, owner, products
 }
 
 app.Run();

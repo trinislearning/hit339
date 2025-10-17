@@ -13,32 +13,31 @@ namespace EasyGames.Controllers
         public ReportsController(ApplicationDbContext db) => _db = db;
 
         // GET: /Reports/SalesByUser?from=2025-01-01&to=2025-12-31
-        // Aggregates revenue/profit from OrderItems. Assumes:
-        // - Order has CreatedAt and User navigation (Identity)
-        // - OrderItem has UnitPrice (sell) and UnitCost (cost)
         public async Task<IActionResult> SalesByUser(DateTime? from, DateTime? to)
         {
             var start = from ?? DateTime.UtcNow.AddMonths(-1);
             var end = (to ?? DateTime.UtcNow).AddDays(1); // make 'to' inclusive
 
-            var rows = await _db.OrderItems
+            // ⚙️ Fix: force client-side eval using AsEnumerable()
+            var rows = _db.OrderItems
                 .Include(oi => oi.Order)
                 .Include(oi => oi.Order.User)
+                .AsEnumerable()  // ✅ SQLite-safe
                 .Where(oi => oi.Order.CreatedAt >= start && oi.Order.CreatedAt < end)
                 .GroupBy(oi => new { oi.Order.UserId, oi.Order.User.Email })
                 .Select(g => new SalesByUserVm
                 {
-                    UserId = g.Key.UserId!,
-                    Email = g.Key.Email!,
+                    UserId = g.Key.UserId ?? string.Empty,
+                    Email = g.Key.Email ?? string.Empty,
                     Orders = g.Select(x => x.OrderId).Distinct().Count(),
                     TotalQty = g.Sum(x => x.Quantity),
-                    Revenue = g.Sum(x => x.UnitPrice * x.Quantity),
-                    Profit = g.Sum(x => (x.UnitPrice - x.UnitCost) * x.Quantity)
+                    Revenue = g.Sum(x => (decimal)x.UnitPrice * x.Quantity),
+                    Profit = g.Sum(x => ((decimal)x.UnitPrice - (decimal)x.UnitCost) * x.Quantity)
                 })
                 .OrderByDescending(x => x.Profit)
-                .ToListAsync();
+                .ToList();
 
-            // Optional: auto-update tier on users, based on computed profit in the date range
+            // Update user tiers safely
             var ids = rows.Select(r => r.UserId).Distinct().ToList();
             var users = await _db.Users.Where(u => ids.Contains(u.Id)).ToListAsync();
             foreach (var r in rows)
@@ -56,7 +55,7 @@ namespace EasyGames.Controllers
             return View(rows);
         }
 
-        // Tier thresholds – adjust to your team’s decision if needed.
+        // Tier thresholds – adjust if needed
         private static string GetTierFromProfit(decimal profit)
         {
             if (profit >= 5000) return "Platinum";
@@ -66,7 +65,7 @@ namespace EasyGames.Controllers
         }
     }
 
-    // Lightweight view model for the report table
+    // ViewModel
     public class SalesByUserVm
     {
         public string UserId { get; set; } = string.Empty;

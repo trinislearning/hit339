@@ -1,0 +1,46 @@
+﻿@model IEnumerable<EasyGames.Models.ShopStock>
+@{
+    var shop = ViewBag.Shop as EasyGames.Models.Shop;
+    ViewData["Title"] = $"POS – {shop?.Name}";
+}
+
+<h2>@shop?.Name – Point of Sale</h2>
+
+@if (TempData["ok"] != null)
+{
+    <div class="alert alert-success">@TempData["ok"]</div>
+}
+@if (TempData["error"] != null)
+{
+    <div class="alert alert-danger">@TempData["error"]</div>
+}
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Price ($)</th>
+            <th>Available</th>
+            <th>Sell Qty</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var s in Model)
+    {
+        <tr>
+            <td>@s.Product.Name</td>
+            <td>@s.Product.Price.ToString("0.00")</td>
+            <td>@s.Quantity</td>
+            <td>
+                <form asp-action="Sell" method="post">
+                    <input type="hidden" name="stockId" value="@s.Id" />
+                    <input type="hidden" name="shopId" value="@shop?.Id" />
+                    <input type="number" name="quantity" min="1" max="@s.Quantity" value="1" class="form-control form-control-sm" />
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Sell</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

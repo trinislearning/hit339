@@ -1,109 +1,131 @@
 ﻿using EasyGames.Data;
 using EasyGames.Models;
-using EasyGames.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EasyGames.Controllers
 {
-    // Owner manages per-shop inventory; shop owners would use this in a real system
-    [Authorize(Roles = "Owner")]
+    [Authorize(Roles = "Shop,Owner")]
     public class ShopStocksController : Controller
     {
         private readonly ApplicationDbContext _db;
         public ShopStocksController(ApplicationDbContext db) => _db = db;
 
         // GET: /ShopStocks?shopId=1
-        // Lists current stock for a shop
         public async Task<IActionResult> Index(int shopId)
         {
-            var shop = await _db.Shops.FindAsync(shopId);
+            var shop = await _db.Shops
+                .Include(s => s.Stocks)
+                    .ThenInclude(ss => ss.Product)
+                .FirstOrDefaultAsync(s => s.Id == shopId);
+
             if (shop == null) return NotFound();
 
             ViewBag.Shop = shop;
-            var rows = await _db.ShopStocks
-                .Include(ss => ss.Product)
-                .Where(ss => ss.ShopId == shopId)
-                .OrderBy(ss => ss.Product.Name)
-                .ToListAsync();
-
-            return View(rows);
+            return View(shop.Stocks.OrderBy(s => s.ProductName).ToList());
         }
 
         // GET: /ShopStocks/Add?shopId=1
-        // Add products into a shop's inventory from Owner's product list
         public async Task<IActionResult> Add(int shopId)
         {
-            var shop = await _db.Shops.FindAsync(shopId);
-            if (shop == null) return NotFound();
-
-            var vm = new AddShopStockViewModel
-            {
-                ShopId = shopId,
-                Products = await _db.Products
-                    .OrderBy(p => p.Name)
-                    .Select(p => new ValueTuple<int, string>(p.Id, p.Name))
-                    .ToListAsync()
-            };
-            ViewBag.Shop = shop;
-            return View(vm);
+            var products = await _db.Products.OrderBy(p => p.Name).ToListAsync();
+            ViewBag.ShopId = shopId;
+            ViewBag.Products = products;
+            return View();
         }
 
+        // POST: /ShopStocks/Add
         [HttpPost]
-        public async Task<IActionResult> Add(AddShopStockViewModel vm)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Add(int shopId, int productId, int quantity)
         {
-            if (!ModelState.IsValid)
-                return View(vm);
+            if (quantity < 0) quantity = 0;
 
-            var shop = await _db.Shops.FindAsync(vm.ShopId);
-            if (shop == null) return NotFound();
+            var shop = await _db.Shops.FindAsync(shopId);
+            var product = await _db.Products.FindAsync(productId);
+            if (shop == null || product == null) return NotFound();
 
-            // Ensure product exists in Owner inventory
-            var product = await _db.Products.FindAsync(vm.ProductId);
-            if (product == null)
-            {
-                ModelState.AddModelError("", "Product not found.");
-                return View(vm);
-            }
-
-            // Create or update shop stock row
             var existing = await _db.ShopStocks
-                .FirstOrDefaultAsync(x => x.ShopId == vm.ShopId && x.ProductId == vm.ProductId);
+                .FirstOrDefaultAsync(s => s.ShopId == shopId && s.ProductId == productId);
 
-            if (existing == null)
+            if (existing != null)
             {
-                _db.ShopStocks.Add(new ShopStock
-                {
-                    ShopId = vm.ShopId,
-                    ProductId = vm.ProductId,
-                    Quantity = Math.Max(0, vm.Quantity)
-                });
+                // Update existing row
+                existing.Quantity += quantity;
+                existing.ProductName = product.Name;     // keep mirrored fields in sync
+                existing.BuyPrice = product.CostPrice;
+                existing.SellPrice = product.Price;
             }
             else
             {
-                existing.Quantity += Math.Max(0, vm.Quantity);
+                // Create new row (IMPORTANT: set ProductName/BuyPrice/SellPrice)
+                _db.ShopStocks.Add(new ShopStock
+                {
+                    ShopId = shopId,
+                    ProductId = productId,
+                    Quantity = quantity,
+                    ProductName = product.Name,           // NOT NULL in DB
+                    BuyPrice = product.CostPrice,
+                    SellPrice = product.Price
+                });
             }
 
             await _db.SaveChangesAsync();
-            TempData["ok"] = "Stock added to shop.";
-            return RedirectToAction(nameof(Index), new { shopId = vm.ShopId });
+            TempData["ok"] = "Stock updated successfully.";
+            return RedirectToAction(nameof(Index), new { shopId });
         }
 
-        // POST: /ShopStocks/Delete/5
+        // OPTIONAL: Bulk import all owner products to a shop with default qty
+        // POST: /ShopStocks/ImportAll?shopId=1&qty=10
         [HttpPost]
-        public async Task<IActionResult> Delete(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ImportAll(int shopId, int qty = 10)
         {
-            var row = await _db.ShopStocks.FindAsync(id);
-            if (row != null)
+            if (qty < 1) qty = 1;
+
+            var shop = await _db.Shops
+                .Include(s => s.Stocks)
+                .FirstOrDefaultAsync(s => s.Id == shopId);
+            if (shop == null) return NotFound();
+
+            var existingIds = shop.Stocks.Select(ss => ss.ProductId).ToHashSet();
+
+            var productsToAdd = await _db.Products
+                .Where(p => !existingIds.Contains(p.Id))
+                .ToListAsync();
+
+            foreach (var p in productsToAdd)
             {
-                var shopId = row.ShopId;
-                _db.ShopStocks.Remove(row);
-                await _db.SaveChangesAsync();
-                TempData["ok"] = "Item removed.";
-                return RedirectToAction(nameof(Index), new { shopId });
+                _db.ShopStocks.Add(new ShopStock
+                {
+                    ShopId = shopId,
+                    ProductId = p.Id,
+                    Quantity = qty,
+                    ProductName = p.Name,           // NOT NULL
+                    BuyPrice = p.CostPrice,
+                    SellPrice = p.Price
+                });
             }
-            return RedirectToAction("Index", "OwnerShops");
+
+            await _db.SaveChangesAsync();
+            TempData["ok"] = $"Imported {productsToAdd.Count} products (qty {qty}).";
+            return RedirectToAction(nameof(Index), new { shopId });
+        }
+
+        // POST: /ShopStocks/Delete
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id, int shopId)
+        {
+            var item = await _db.ShopStocks.FindAsync(id);
+            if (item != null)
+            {
+                _db.ShopStocks.Remove(item);
+                await _db.SaveChangesAsync();
+                TempData["ok"] = "Stock removed.";
+            }
+            return RedirectToAction(nameof(Index), new { shopId });
         }
     }
 }
