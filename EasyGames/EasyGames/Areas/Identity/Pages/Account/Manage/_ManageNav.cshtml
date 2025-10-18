@@ -1,0 +1,15 @@
+@using EasyGames.Models
+
+<nav class="nav flex-column">
+    <a class="nav-link" href="@Url.Page("/Account/Manage/Index", new { area = "Identity" })">Profile</a>
+    <a class="nav-link" href="@Url.Page("/Account/Manage/Email", new { area = "Identity" })">Email</a>
+    <a class="nav-link" href="@Url.Page("/Account/Manage/ChangePassword", new { area = "Identity" })">Password</a>
+    <a class="nav-link" href="@Url.Page("/Account/Manage/TwoFactorAuthentication", new { area = "Identity" })">Two-factor authentication</a>
+    <a class="nav-link" href="@Url.Page("/Account/Manage/PersonalData", new { area = "Identity" })">Personal data</a>
+
+    @* Custom: My Orders link visible to signed-in non-owner users *@
+    @if (User?.Identity?.IsAuthenticated == true && !User.IsInRole("Owner"))
+    {
+        <a class="nav-link" href="@Url.Action("Index", "Orders")">My Orders</a>
+    }
+</nav>

@@ -1,0 +1,26 @@
+@model IEnumerable<EasyGames.Models.Order>
+
+<h2>Your Orders</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Order #</th>
+            <th>Date</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach(var o in Model)
+    {
+        <tr>
+            <td>@o.Id</td>
+            <td>@o.CreatedAt.ToLocalTime().ToString("g")</td>
+            <td>@o.Total.ToString("C")</td>
+            <td>@o.Status</td>
+            <td><a class="btn btn-sm btn-primary" href="/Orders/Details/@o.Id">Details</a></td>
+        </tr>
+    }
+    </tbody>
+</table>

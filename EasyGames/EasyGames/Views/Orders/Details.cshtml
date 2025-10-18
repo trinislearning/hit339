@@ -1,0 +1,27 @@
+@model EasyGames.Models.Order
+
+<h2>Order Details - #@Model.Id</h2>
+<p>Placed: @Model.CreatedAt.ToLocalTime().ToString("f")</p>
+<p>Status: <strong>@Model.Status</strong></p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Unit</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach(var it in Model.Items)
+    {
+        <tr>
+            <td>@it.Product.Name</td>
+            <td>@it.Quantity</td>
+            <td>@it.UnitPrice.ToString("C")</td>
+            <td>@(it.UnitPrice * it.Quantity).ToString("C")</td>
+        </tr>
+    }
+    </tbody>
+</table>
+<p>Total: <strong>@Model.Total.ToString("C")</strong></p>

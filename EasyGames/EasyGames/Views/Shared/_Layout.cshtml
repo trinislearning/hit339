@@ -91,6 +91,12 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">Profile</a></li>
 
+                                    @* My purchase link: show only for non-owner users *@
+                                    @if (!User.IsInRole("Owner"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Orders" asp-action="Index">My Purchase</a></li>
+                                    }
+
                                     @* Quick link for owner to jump to stock management *@
                                     @if (User.IsInRole("Owner"))
                                     {
@@ -100,6 +106,7 @@
                                         <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
                                         <li><a class="dropdown-item" asp-controller="OwnerUsers" asp-action="Index">Users</a></li>
                                         <li><a class="dropdown-item" asp-controller="Emails" asp-action="Compose">Send Email</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Owner" asp-action="Orders">Orders</a></li>
 
                                     }
 
@@ -162,6 +169,14 @@
                             <a class="nav-link" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
 
+                        @* My Purchase (for customers) placed beside Privacy *@
+                        @if (User?.Identity?.IsAuthenticated == true && !User.IsInRole("Owner"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Orders" asp-action="Index">My Purchase</a>
+                            </li>
+                        }
+
                         @* OWNER dropdown — shows only to Owner role.
                            We keep Owner quick-links here so markers can easily verify features. *@
                         @if (User.IsInRole("Owner"))
@@ -175,6 +190,7 @@
                                     <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
                                     <li><a class="dropdown-item" asp-controller="OwnerUsers" asp-action="Index">Users</a></li>
                                     <li><a class="dropdown-item" asp-controller="Emails" asp-action="Compose">Send Email</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Owner" asp-action="Orders">Orders</a></li>
 
                                     @* If later add ShopStocks index that needs a shopId, link via OwnerShops -> ShopStocks. *@
                                 </ul>

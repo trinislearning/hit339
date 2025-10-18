@@ -1,0 +1,47 @@
+@model EasyGames.Models.Order
+
+<h2>Order #@Model.Id</h2>
+<p>Customer: @Model.User?.UserName</p>
+<p>Placed: @Model.CreatedAt.ToLocalTime().ToString("f")</p>
+<p>Status: <strong>@Model.Status</strong></p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Unit</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach(var it in Model.Items)
+    {
+        <tr>
+            <td>@it.Product.Name</td>
+            <td>@it.Quantity</td>
+            <td>@it.UnitPrice.ToString("C")</td>
+            <td>@(it.UnitPrice * it.Quantity).ToString("C")</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<p>Total: <strong>@Model.Total.ToString("C")</strong></p>
+
+<form asp-action="ConfirmOrder" method="post" class="d-inline">
+    <input type="hidden" name="id" value="@Model.Id" />
+    @if (!Model.IsConfirmed)
+    {
+        <button class="btn btn-success">Confirm</button>
+    }
+    else
+    {
+        <span class="text-muted">Already confirmed at @Model.ConfirmedAt?.ToLocalTime().ToString("g")</span>
+    }
+</form>
+
+<form asp-action="CancelOrder" method="post" class="d-inline ms-2">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <button class="btn btn-danger">Cancel</button>
+</form>

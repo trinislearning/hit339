@@ -3,11 +3,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using EasyGames.Data;
 using EasyGames.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EasyGames.Controllers
 {
+    [Authorize(Roles = "Owner")]
     public class OwnerController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -74,6 +76,61 @@ namespace EasyGames.Controllers
             }
 
             return RedirectToAction(nameof(SendEmail));
+        }
+
+        // NEW: List orders for owner
+        public async Task<IActionResult> Orders()
+        {
+            var orders = await _db.Orders
+                                  .Include(o => o.User)
+                                  .Include(o => o.Items).ThenInclude(i => i.Product)
+                                  .OrderByDescending(o => o.CreatedAt)
+                                  .ToListAsync();
+            return View(orders);
+        }
+
+        // NEW: Order details for owner
+        public async Task<IActionResult> OrderDetails(int id)
+        {
+            var order = await _db.Orders
+                                 .Include(o => o.User)
+                                 .Include(o => o.Items).ThenInclude(i => i.Product)
+                                 .FirstOrDefaultAsync(o => o.Id == id);
+            if (order == null) return NotFound();
+            return View(order);
+        }
+
+        // NEW: Confirm an order
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmOrder(int id)
+        {
+            var order = await _db.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.IsConfirmed = true;
+            order.ConfirmedAt = DateTime.UtcNow;
+            order.Status = "Confirmed";
+
+            await _db.SaveChangesAsync();
+            TempData["Message"] = $"Order #{order.Id} confirmed.";
+            return RedirectToAction(nameof(Orders));
+        }
+
+        // NEW: Cancel an order
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelOrder(int id)
+        {
+            var order = await _db.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.IsConfirmed = false;
+            order.Status = "Cancelled";
+
+            await _db.SaveChangesAsync();
+            TempData["Message"] = $"Order #{order.Id} cancelled.";
+            return RedirectToAction(nameof(Orders));
         }
 
     }
