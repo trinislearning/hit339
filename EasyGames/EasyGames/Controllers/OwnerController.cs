@@ -78,7 +78,7 @@ namespace EasyGames.Controllers
             return RedirectToAction(nameof(SendEmail));
         }
 
-        // NEW: List orders for owner
+        // List orders for owner
         public async Task<IActionResult> Orders()
         {
             var orders = await _db.Orders
@@ -89,7 +89,7 @@ namespace EasyGames.Controllers
             return View(orders);
         }
 
-        // NEW: Order details for owner
+        // Order details for owner
         public async Task<IActionResult> OrderDetails(int id)
         {
             var order = await _db.Orders
@@ -100,7 +100,7 @@ namespace EasyGames.Controllers
             return View(order);
         }
 
-        // NEW: Confirm an order
+        // Confirm an order
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmOrder(int id)
@@ -117,7 +117,7 @@ namespace EasyGames.Controllers
             return RedirectToAction(nameof(Orders));
         }
 
-        // NEW: Cancel an order
+        // Cancel an order
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelOrder(int id)

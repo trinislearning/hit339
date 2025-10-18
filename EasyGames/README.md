@@ -39,3 +39,7 @@ Notes
 - `Program.cs` already calls `db.Database.MigrateAsync()` to auto-apply migrations.
 
 If you want I can also add a `scripts/setup.ps1` that runs restore and applies migrations automatically.
+
+---
+
+Test: adding this line to trigger a PR for merging into `main`.
